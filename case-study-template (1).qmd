@@ -1,0 +1,97 @@
+---
+title: "Your Informative Title Here"
+author: "Abby Hunt and Tajhini Brown"
+date: "Case Study 1: March 5, 2025"
+format: 
+  pdf:
+    keep-tex: true
+    include-in-header: 
+       text: |
+         \usepackage{fvextra}
+         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+         \DefineVerbatimEnvironment{OutputCode}{Verbatim}{breaklines,commandchars=\\\{\}}
+    geometry: 
+      - left=1in
+      - right=1in
+      - top=1in
+      - bottom=1in 
+---
+
+**Introduction**
+
+The 2000 US presidential election was one of the closest in history. The race was between the Republican nominee George W. Bush and Al Gore, the incumbent Democratic vice president. Florida was the tie-breaker state. Television networks’ predictions oscillated between both candidates as victors as votes were counted. At the end of counting, Bush was leading by only 1,738 votes. The narrow margin called for an immediate recount. When votes were recounted, it was revealed that Bush had actually led by less than 400 votes. This caused Democratic voters in Palm Beach County to complain about the design of the ballot as it had a “butterfly” layout, and that they had accidentally voted for the wrong candidate, Pat Buchanan. Using statistical analysis and linear regression modelling, our case study seeks to suggest answers to the number of predicted votes for Buchanan in Palm Beach County assuming that the relationship between Bush votes and Buchanan votes was the same in Palm Beach as it was in the other Florida counties and how many mis-cast votes there were since some voters erroneously voted Buchanan instead of Gore.
+
+**Description of Data**
+
+Our original data set we were given consisted of all total votes for Bush and Bucanan in the 2000 presidential election for each county in Florida which is 67 total counties. Our unit of observation was a vote casted in the United States 2000 presidential election. As Palm Beach county was a major outlier, we removed it from our data so that we could have more accurate results. The minimum number of votes casted for Bush in any county was 1316 while the maximum number of votes casted for Bush in any county was 289,456. Buchanan had a minimum of 9 votes casted for him while the maximum number of votes casted for him in any county was 3407. Bush’s median number of votes was 20,196 while Buchanan had a median of 114, and Bush had a mean of 43,356 votes and Buchanan had a mean of 258.5 votes. As we can see from the summary statistics, Bush had consistently more votes than Buchanan in the 2000 Presidential election. 
+
+**Description of the Modelling Process**
+
+# R Appendix
+
+*Copy and paste all code that you used for your case study into one chunk at the end of your written report. Before submitting your case study, take one final look at the R Appendix and make sure that all code is clearly visible. If you see a line running off the side of the PDF, please split the code over multiple lines using a linebreak. The header at the top of this template should ensure that lines of code are automatically wrapped in your final document.*
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+
+# Loading necessary packages
+library(tidyverse)
+library(Sleuth2)
+library(broom)        
+library(kableExtra)   
+
+# Loading the data for case study one
+election <- Sleuth2::ex0825
+
+# Creating a second dataset with Palm Beach County excluded
+election_wo_pb <- election |> filter(County != "Palm Beach")
+
+#creating a scatterplot to visualize the relationship between Bush and Buchanan Votes
+election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) + geom_point() + ggtitle("Association between votes for Bush and votes for Buchanan.")
+
+#Fit a linear regression model to predict Buchanan2000 votes based on Bush2000 votes
+election_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+
+# Representing the regression table as a dataframe (i.e., tidying the summary() output)
+election_lm_table <- summary(election_lm)$coefficients
+
+# Creating a nicely formatted table from the dataframe using the kable package
+#   You can find more information about this package here: https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf
+election_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
+
+#Use the fitted regression model to predict Buchanan2000 votes for Palm Beach County
+palm_beach_predictions <- predict(model, newdata = election |> filter(County == "Palm Beach"), 
+                       interval = "prediction", level = 0.95)
+
+# Viewing the prediction interval
+palm_beach_predictions  
+
+#Fit a linear regression model using a double log transformation
+model_double_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+#View the summary of the model to see the regression results
+summary(model_double_log)
+
+# Create a scatter plot of the log-transformed votes for Bush and Buchanan
+plot(log(election_wo_pb$Bush), log(election_wo_pb$Buchanan), 
+     xlab = "Log(Bush Votes)", ylab = "Log(Buchanan Votes)", 
+     main = "Double Log-Transformed Regression: Log(Bush Votes) vs Log(Buchanan Votes)",
+     pch = 19, col = "blue")
+# Add the regression line from the double-log model to the plot
+abline(model_double_log, col = "red", lwd = 2) 
+
+# Generate predictions using the double-log regression model for new data (palm_beach_data),
+# providing both the predicted values and a 95% prediction interval.
+pred_double_log <- predict(model_double_log, newdata = palm_beach_data, 
+                           interval = "prediction", level = 0.95)
+# Exponentiate the predictions (since we applied log transformation during modeling),
+# to return the predicted Buchanan votes in the original scale (non-log scale).
+pred_buchanan_double_log <- exp(pred_double_log)
+# Display the transformed predictions (original scale of Buchanan votes)
+pred_buchanan_double_log 
+
+# Basic summary statistics for Bush and Buchanan votes
+summary(election$Bush)
+summary(election$Buchanan)
+
+```
