@@ -78,7 +78,7 @@ ggplot(tidy_election_wo_pb, aes(x=values, fill = ind)) +
   facet_wrap(~ind)
 ```
 
-Figure 1 shows a considerable difference in the distribution of Buchanan votes compared to Bush votes. While both are right-skewed, the degree of skew on the plot of Buchanan votes is noticeably larger. Each county's total votes for Buchanan is less than 100,000. Total county votes for Bush ranged between the low hundred thousands and 200,000. The distribution indicates outlier total votes of around 300,000. The variation in the number of Bush votes across the counties of Florida is greater than that across Buchanan votes. To improve the skew of the distribution, a natural logarithmic transformation can be applied.
+Figure 1 shows a considerable difference in the distribution of Buchanan votes compared to Bush votes. While both are right-skewed, the degree of skew on the plot of Buchanan votes is noticeably larger. Each county's total votes for Buchanan is less than 100,000. Total county votes for Bush ranged between the low hundred thousands and 200,000. The distribution indicates outlier total votes of around 300,000. The variation in the number of Bush votes across the counties of Florida is greater than that across Buchanan votes. To improve the skew of the distribution, a natural logarithmic transformation can be applied to both variables.
 
 ```{r}
 #| message: FALSE
@@ -94,7 +94,7 @@ ggplot(tidy_election_wo_pb, aes(x=log(values), fill = ind)) +
   facet_wrap(~ind)
 ```
 
-Figure 2 shows a clearer image of the distribution of Buchanan's votes by reducing the skew. The histogram of Buchanan votes shows a unimodal distribution, indicating a singular most frequent number of votes. The distribution of Bush votes shows a bimodal distribution, indicating two groups of votes with the highest frequency.
+Figure 2 shows a clearer image of the distribution of Buchanan's votes by reducing the skew. The histogram of Buchanan's votes shows a unimodal distribution, indicating a singular most frequent number of votes. The distribution of Bush votes shows a bimodal distribution, indicating two groups of votes with the highest frequency.
 
 ```{r}
 #| message: FALSE
@@ -126,7 +126,7 @@ We observe from Figure 4 a similar distribution of Buchanan and Bush Votes on a 
 
 **Statistical Methods and Results**
 
-To estimate the relationship between the quantitative outcome variable, number of Buchanan votes and the quantitative explanatory variable, the number of Bush votes in the 2000 election, a simple linear regression model was employed. Using a linear regression model, we can also predict a more reasonable point estimate for Buchanan votes based on this relationship. Through intervals around the model's predicated point estimate, we can also determine a plausible number of votes that should have been in Gore. The model expresses Buchanan votes as a function of Bush votes.
+To estimate the relationship between the quantitative outcome variable, number of Buchanan votes and the quantitative explanatory variable, the number of Bush votes in the 2000 election, a simple linear regression model was employed. Using a linear regression model, we can also predict a more reasonable point estimate for Buchanan votes based on this relationship. Through intervals around the model's predicated point estimate, we can also determine a plausible number of votes that should have been in Gore. The model expresses Buchanan votes as a function of Bush votes. To ensure the model is as appropriate for the data as the plot in Figure 3 shows a violation of the equal variance condition for simple linear regression, transformations are applied to both the explanatory and response variables.
 
 **Population Model for the Mean Buchanan votes as a Function of Bush Votes**
 
@@ -138,7 +138,7 @@ where *log(Buchanan2000)* is the natural logarithm of the number of votes Pat Bu
 
 $$ \widehat{log({y_i})} = \widehat\beta_0 + \widehat\beta_1log(x_i) $$
 
-Estimates for the intercept coefficient, $\widehat\beta_0$ and slope,$\widehat\beta_1$ values were determined by fitting the model to the data.
+Estimates for the intercept coefficient, $\widehat\beta_0$ and slope, $\widehat\beta_1$ values were determined by fitting the model to the data.
 
 ```{r}
 #| message: FALSE
@@ -164,6 +164,12 @@ Based on the model estimates summary table, $\widehat\beta_0$ is -2.34, and $\wi
 $$ \widehat{log({y_i})} = -2.34 + 0.73(log(x_i)) $$
 
 A doubling of the number of total votes Bush receives in a county is associated with a multiplicative change of $2^{0.73}$ in the median of total Buchanan votes in a county.
+
+To predict a value for the number of total county votes Buchanan could have reasonably expected to receive in Palm Beach County given a more user-friendly ballot, we used the fitted regression line and the number of votes Bush received in that county to calculate it. We also obtained a reasonable range for this value by using a 95% prediction interval.
+
+Based on our fitted regression line, Buchanan's total number of votes in Palm County is more reasonably expected to be 592 based on the number of votes Bush received in the same county: 152,846 votes.
+
+We are 95% confident that the number of votes for Buchanan for Palm County total votes with Bush total county votes at 152,846 is between 251 and 1399.
 
 **Discussion**
 
@@ -241,11 +247,12 @@ new_election <- data.frame(Bush2000 = election_pb_bush)
 palm_beach_predictions <- model_double_log |> augment(newdata = new_election, 
                           interval = "prediction", 
                           conf.level = 0.95)
+palm_beach_predictions
 # Providing both the predicted values and a 95% prediction interval
 
 # Exponentiate the predictions (since we applied log transformation during modeling),
 # to return the predicted Buchanan votes in the original scale (non-log scale).
-pred_buchanan_double_log <- exp(palm_beach_predictions)
+pred_buchanan_double_log <- exp(palm_beach_predictions$.fitted)
 # Display the transformed predictions (original scale of Buchanan votes)
 pred_buchanan_double_log 
 
