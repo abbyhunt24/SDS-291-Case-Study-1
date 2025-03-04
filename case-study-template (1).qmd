@@ -107,6 +107,8 @@ election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) +
   labs(title ="Association Between Votes for Bush and Votes for Buchanan.", x = "Bush Votes", y = "Buchanan Votes")
 ```
 
+We observe from Figure 3 that most of the Buchanan total county votes lie between 0 and 500, while most of the total county votes for Bush lie between 0 and 100,000.
+
 ```{r}
 #| message: FALSE
 #| warning: FALSE
@@ -120,23 +122,48 @@ ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) +
   scale_y_continuous(trans = "log")
 ```
 
-**Statistical Methods**
+We observe from Figure 4 a similar distribution of Buchanan and Bush Votes on a logarithmic scale.
+
+**Statistical Methods and Results**
 
 To estimate the relationship between the quantitative outcome variable, number of Buchanan votes and the quantitative explanatory variable, the number of Bush votes in the 2000 election, a simple linear regression model was employed. Using a linear regression model, we can also predict a more reasonable point estimate for Buchanan votes based on this relationship. Through intervals around the model's predicated point estimate, we can also determine a plausible number of votes that should have been in Gore. The model expresses Buchanan votes as a function of Bush votes.
 
-Model for Predicting Buchanan votes from Bush votes
+**Population Model for the Mean Buchanan votes as a Function of Bush Votes**
 
-$$ E[log(Buchanan2000)|log(Bush2000)] = \beta_0 + \beta_1(log(Bush2000)) + \epsilon, $$
+$$ E[log(Buchanan2000)|log(Bush2000)] = \beta_0 + \beta_1(log(Bush2000)), $$
 
-where log(Buchanan2000) is the natural logarithm of the number of votes Pat Buchanan received in the 2000 United States presidential election and log(Bush2000) is the natural logarithm of the number of votes George W. Bush received in the 2000 United States presidential election.
+where *log(Buchanan2000)* is the natural logarithm of the number of votes Pat Buchanan received in the 2000 United States presidential election and *log(Bush2000)* is the natural logarithm of the number of votes George W. Bush received in the 2000 United States presidential election.
 
-$$ log(\widehat{y}) = \widehat\beta_0 + \widehat\beta_1log(x) $$
+**The Fitted Model for the Mean**
 
-The
+$$ \widehat{log({y_i})} = \widehat\beta_0 + \widehat\beta_1log(x_i) $$
 
-$$ log(\widehat{y}) = -2.34149 + 0.73096(log(x)) $$
+Estimates for the intercept coefficient, $\widehat\beta_0$ and slope,$\widehat\beta_1$ values were determined by fitting the model to the data.
 
-**Results**
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| label: estimate-tbl
+#| tbl-cap: "Table showing estimates of the model Parameters and their accompanying standard errors"
+# Fit a linear regression model to predict Buchanan2000 votes based on Bush2000 votes
+election_wo_pb_lm <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+
+# Representing the regression table as a dataframe (i.e., tidying the summary() output)
+election_wo_pb_lm_table <- summary(election_wo_pb_lm)$coefficients
+
+# Creating a nicely formatted table from the dataframe using the kable package
+#   You can find more information about this package here: https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf
+election_wo_pb_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
+```
+
+Based on the model estimates summary table, $\widehat\beta_0$ is -2.34, and $\widehat\beta_1$ is 0.73. The slope indicates that there is a positive relationship between the number of total county votes Bush received and the number of total county votes Buchanan received.
+
+**The Fitted Model for the Mean Buchanan votes as a Function of Bush Votes**
+
+$$ \widehat{log({y_i})} = -2.34 + 0.73(log(x_i)) $$
+
+A doubling of the number of total votes Bush receives in a county is associated with a multiplicative change of $2^{0.73}$ in the median of total Buchanan votes in a county.
 
 **Discussion**
 
