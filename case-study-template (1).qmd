@@ -19,13 +19,13 @@ format:
       - bottom=1in 
 ---
 
-**Introduction**
+## Introduction
 
 The 2000 US presidential election was one of the closest in history. The race was between the Republican nominee George W. Bush and Al Gore, the incumbent Democratic vice president. Florida was the tie-breaker state. Television networks’ predictions oscillated between both candidates as victors as votes were counted. At the end of counting, Bush was leading by only 1,738 votes. The narrow margin called for an immediate recount. When votes were recounted, it was revealed that Bush had actually led by less than 400 votes. This caused Democratic voters in Palm Beach County to complain about the design of the ballot as it had a “butterfly” layout, and that they had accidentally voted for the wrong candidate, Pat Buchanan.
 
 Using statistical analysis, this case study seeks to suggest answers to the number of votes Buchanan could have reasonably expected to receive given a more user-friendly ballot. Using a linear regression model, with Buchanan votes as a function of Bush votes, this case study seeks to determine the predicted number of votes for Buchanan in Palm Beach County, assuming that the relationship between Bush votes and Buchanan votes was the same in Palm Beach as in the other Florida counties. This case study also aims to determine how many mis-cast votes there were since some voters erroneously voted Buchanan instead of Gore.
 
-**Description of Data and Exploratory Data Analysis**
+## Description of Data and Exploratory Data Analysis
 
 The dataset originates from the Statistical Sleuth data library. It consists of all total votes for Bush and Buchanan in the US 2000 presidential election for each county in Florida, which is 67 in total. The unit of observation is a vote cast in the United States 2000 presidential election. As Palm Beach County was a major outlier, it was removed from the data set to improve model accuracy. This brought the total observations to 66.
 
@@ -124,17 +124,17 @@ ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) +
 
 We observe from Figure 4 a similar distribution of Buchanan and Bush Votes on a logarithmic scale.
 
-**Statistical Methods and Results**
+## Statistical Methods and Results
 
 To estimate the relationship between the quantitative outcome variable, number of Buchanan votes and the quantitative explanatory variable, the number of Bush votes in the 2000 election, a simple linear regression model was employed. Using a linear regression model, we can also predict a more reasonable point estimate for Buchanan votes based on this relationship. Through intervals around the model's predicated point estimate, we can also determine a plausible number of votes that should have been in Gore. The model expresses Buchanan votes as a function of Bush votes. To ensure the model is as appropriate for the data as the plot in Figure 3 shows a violation of the equal variance condition for simple linear regression, transformations are applied to both the explanatory and response variables.
 
-**Population Model for the Mean Buchanan votes as a Function of Bush Votes**
+###### Population Model for the Mean Buchanan Votes as a Function of Bush Votes
 
 $$ E[log(Buchanan2000)|log(Bush2000)] = \beta_0 + \beta_1(log(Bush2000)), $$
 
 where *log(Buchanan2000)* is the natural logarithm of the number of votes Pat Buchanan received in the 2000 United States presidential election and *log(Bush2000)* is the natural logarithm of the number of votes George W. Bush received in the 2000 United States presidential election.
 
-**The Fitted Model for the Mean**
+###### The Fitted Model for the Mean
 
 $$ \widehat{log({y_i})} = \widehat\beta_0 + \widehat\beta_1log(x_i) $$
 
@@ -159,7 +159,7 @@ election_wo_pb_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t va
 
 Based on the model estimates summary table, $\widehat\beta_0$ is -2.34, and $\widehat\beta_1$ is 0.73. The slope indicates that there is a positive relationship between the number of total county votes Bush received and the number of total county votes Buchanan received.
 
-**The Fitted Model for the Mean Buchanan votes as a Function of Bush Votes**
+###### The Fitted Model for the Mean Buchanan Votes as a Function of Bush Votes
 
 $$ \widehat{log({y_i})} = -2.34 + 0.73(log(x_i)) $$
 
@@ -171,9 +171,9 @@ Based on our fitted regression line, Buchanan's total number of votes in Palm Co
 
 We are 95% confident that the number of votes for Buchanan for Palm County total votes with Bush total county votes at 152,846 is between 251 and 1399.
 
-**Discussion**
+## Discussion
 
-**R Appendix**
+## R Appendix
 
 ```{r}
 #| message: FALSE
