@@ -1,7 +1,9 @@
 ---
-title: "Your Informative Title Here"
+title: "Case Study 1: The Butterfly Ballot Effect: Investigating the Impact Butterfly Ballots had on Voting in the 2000 US Presidential Election in Florida Counties"
 author: "Abby Hunt and Tajhini Brown"
-date: "Case Study 1: March 5, 2025"
+date: "March 5, 2025"
+output: 
+  bookdown::pdf_document2: default
 format: 
   pdf:
     keep-tex: true
@@ -54,6 +56,9 @@ sapply(election_wo_pb_summary_df, summary, digits=5) |>
 ```
 
 Based on Table 1, the minimum number of votes cast for Bush in any county was 1316, and the maximum was 289,456. Buchanan had a minimum of 9 votes cast in his favor in any county during the election and 3407. Bush’s median number of votes was significantly higher than Buchanan's at 20,196, while Buchanan had a median of 114. Bush had a mean of 43,356 votes, and Buchanan had a mean of 258.5 votes, indicating the typical total votes for a county. As we can see from the summary statistics, Bush consistently had more votes than Buchanan in the 2000 Presidential election.
+
+Based on Table 1, the minimum number of votes cast for Bush in any county was 1316, and the maximum was 289,456. Buchanan had a minimum of 9 votes cast in his favour in any county during the election and 3407. Bush’s median number of votes was significantly higher than Buchanan's at 20,196, while Buchanan had a median of 114. Bush had a mean of 43,356 votes, and Buchanan had a mean of 258.5 votes, indicating the typical total votes for a county. As we can see from the summary statistics, Bush consistently had more votes than Buchanan in the 2000 Presidential election.
+
 
 The mean number of votes for both candidates is larger than the median number of votes, indicating an inflation of the mean by outlier total county votes. There are fewer outliers affecting the mean of Buchanan votes than that of Bush votes.
 
@@ -171,7 +176,6 @@ We are 95% confident that the number of votes for Buchanan for Palm County total
 
 ## Discussion
 Since we removed Palm Beach, our analysis is based on the typical voting patterns in the other counties. This means that our model is more generalized to counties with more standard ballot designs and voting conditions. While Palm Beach's issues were likely the most extreme, other counties might have had smaller, unquantified ballot design flaws, voter confusion, or other irregularities that could still influence voting behavior. Our model does not capture any similar but less obvious problems in other counties. 
-## R Appendix
 
 **Assessing the Linear Regression Model**
 
@@ -297,3 +301,4 @@ plot(election_wo_pb_lm)
 election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
 plot(election_wo_pb_lm_log)
 ```
+
