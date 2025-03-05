@@ -138,7 +138,7 @@ where *log(Buchanan2000)* is the natural logarithm of the number of votes Pat Bu
 
 $$ \widehat{log({y_i})} = \widehat\beta_0 + \widehat\beta_1log(x_i) $$
 
-Estimates for the intercept coefficient, $\widehat\beta_0$ and slope, $\widehat\beta_1$ values were determined by fitting the model to the data.
+Estimates for the intercept coefficient, $\widehat\beta_0$ and slope, $\widehat\beta_1$ , were determined by fitting the model to the data.
 
 ```{r}
 #| message: FALSE
