@@ -122,7 +122,7 @@ ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) +
   scale_y_continuous(trans = "log")
 ```
 
-We observe from Figure 4 a similar distribution of Buchanan and Bush Votes on a logarithmic scale.
+We observe from Figure 4 a similar distribution of Buchanan and Bush Votes on a natural logarithmic scale.
 
 ## Statistical Methods and Results
 
@@ -175,96 +175,127 @@ We are 95% confident that the number of votes for Buchanan for Palm County total
 
 ## R Appendix
 
+Assessing the Linear Regression Model
+
 ```{r}
 #| message: FALSE
 #| warning: FALSE
+#| echo: FALSE
+election_wo_pb_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+plot(election_wo_pb_lm)
+```
 
-# Loading necessary packages
+From the plots, the model violates the linearity and equal variance conditions. It also violates the normality condition as the Q-Q plot shows many extreme residuals.
+
+Assessing the Linear Regression Model Under Natural Logarithmic Transformation of Response and Explanatory Variables
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+plot(election_wo_pb_lm_log)
+```
+
+From the plots, from the residuals vs fitted plot, we can observe that the natural logarithmic transformation improved the model, and it now meets the linearity and homoscedasticity conditions. While the Q-Q Residuals plot did increase the normality there are still many extreme residuals to the left of the plot.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| output: FALSE
+
 library(tidyverse)
 library(Sleuth2)
 library(broom)        
 library(kableExtra)   
 library(ggplot2)
 library(knitr)
+library(dplyr)
 
 # Loading the data for case study one
 election <- Sleuth2::ex0825
 
 # Creating a second dataset with Palm Beach County excluded
 election_wo_pb <- election |> filter(County != "Palm Beach")
+election_wo_pb_summary_df <- election_wo_pb |>
+  select(Bush2000, Buchanan2000) 
 
-# Creating a scatterplot to visualize the relationship between Bush and Buchanan Votes
-election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) + geom_point() + ggtitle("Association between votes for Bush and votes for Buchanan.")
+# Creating and formatting a table of summary statistics
+sapply(election_wo_pb_summary_df, summary, digits=5) |>
+  kable()
+
+# Data wrangling the election dataset to create histograms
+tidy_election_wo_pb <- election_wo_pb |>
+  select(Buchanan2000, Bush2000)|>
+  stack()
+
+# EDA histogram of distribution of Buchanan Votes and Bush Votes
+ggplot(tidy_election_wo_pb, aes(x=values, fill = ind)) +
+  geom_histogram(bins = 20)+
+  theme(legend.position="top")+
+  labs(x = "Votes", y= "Count", fill = "Candidates")+
+  scale_fill_manual(values=c("#A020F0", "#FF0000")) + 
+  facet_wrap(~ind)
+
+# EDA histogram of distribution of Buchanan Votes and Bush Votes under a natural logarithmic transformation
+ggplot(tidy_election_wo_pb, aes(x=log(values), fill = ind)) +
+  geom_histogram(bins = 20)+
+  theme(legend.position="top")+
+  labs(x = "log(Votes)", y= "Count", fill = "Candidates")+
+  scale_fill_manual(values=c("#A020F0", "#FF0000")) + 
+  facet_wrap(~ind)
+
+# EDA scatterplot of Buchanan Votes against Bush Votes
+election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) + 
+  geom_point() + 
+  labs(title ="Association Between Votes for Bush and Votes for Buchanan.", x = "Bush Votes", y = "Buchanan Votes")
+
+# EDA scatterplot of Buchanan Votes against Bush Votes under a natural logarithmic transformation
+ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) + 
+  geom_point() + 
+  labs(title ="Association Between Natural Logarithmic Transformation Votes for Bush and Votes for Buchanan.", 
+       x = "log(Bush Votes)", 
+       y = "log(Buchanan Votes)")+
+  scale_x_continuous(trans = "log") + 
+  scale_y_continuous(trans = "log")
 
 # Fit a linear regression model to predict Buchanan2000 votes based on Bush2000 votes
-election_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+election_wo_pb_lm <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
 
 # Representing the regression table as a dataframe (i.e., tidying the summary() output)
-election_lm_table <- summary(election_lm)$coefficients
+election_wo_pb_lm_table <- summary(election_wo_pb_lm)$coefficients
 
 # Creating a nicely formatted table from the dataframe using the kable package
 #   You can find more information about this package here: https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf
-election_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
+election_wo_pb_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
 
-# Creating a vector of the number of Palm Beach votes for Bush 
+# Extracting Bush total county votes in Palm Beach
 election_pb_bush <- election |> 
               filter(County == "Palm Beach")|>
               pull(Bush2000)
 election_pb_bush
 
-#Use the fitted regression model to predict Buchanan2000 votes for Palm Beach County
-
-new_election <- data.frame(Bush2000 = election_pb_bush)
-palm_beach_predictions <- election_lm |> augment(newdata = new_election, 
-                          interval = "prediction", 
-                          conf.level = 0.95)
-
-# Viewing the prediction interval
-palm_beach_predictions  
-
-# Fit a linear regression model using a double log transformation
-model_double_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
-
-# View the summary of the model to see the regression results
-summary(model_double_log)
-
-# Representing the regression table as a dataframe (i.e., tidying the summary() output)
-model_double_log_table <- summary(model_double_log)$coefficients
-
-# Creating a nicely formatted table from the dataframe using the kable package
-#   You can find more information about this package here: https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf
-model_double_log_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
-
-# Create a scatter plot of the log-transformed votes for Bush and Buchanan with a regression line
-ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) + 
-  geom_point() +
-  geom_smooth(method=lm, se=FALSE, formula = y~x) +
-  scale_x_continuous(trans = "log") + 
-  scale_y_continuous(trans = "log")
-
 # Generate predictions using the double-log regression model for new data (palm_beach_data),
 new_election <- data.frame(Bush2000 = election_pb_bush)
-palm_beach_predictions <- model_double_log |> augment(newdata = new_election, 
+palm_beach_predictions <- election_wo_pb_lm |> augment(newdata = new_election, 
                           interval = "prediction", 
                           conf.level = 0.95)
 palm_beach_predictions
 # Providing both the predicted values and a 95% prediction interval
 
-# Exponentiate the predictions (since we applied log transformation during modeling),
-# to return the predicted Buchanan votes in the original scale (non-log scale).
-pred_buchanan_double_log <- exp(palm_beach_predictions$.fitted)
+# Exponentiate the predictions (since we applied log transformation during modeling) to return the predicted Buchanan votes in the original scale (non-log scale).
+pred_buchanan_double_log <- palm_beach_predictions |>
+                           select(.fitted, .lower, .upper) |>
+                            exp()
+
 # Display the transformed predictions (original scale of Buchanan votes)
 pred_buchanan_double_log 
 
-# Basic summary statistics for Bush and Buchanan votes
-summary(election$Bush)
-summary(election$Buchanan)
+# Regression Conditions Analysis on Model
+election_wo_pb_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+plot(election_wo_pb_lm)
 
-election_summary_df <- election |>
-  select(Bush2000, Buchanan2000) 
-
-sapply(election_summary_df, summary, digits=5) |>
-  kable()
-  
-
+# Regression Conditions Analysis on Model under natural logarithmic transformation
+election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+plot(election_wo_pb_lm_log)
 ```
