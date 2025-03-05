@@ -17,81 +17,283 @@ format:
       - bottom=1in 
 ---
 
-**Introduction**
+## Introduction
 
-The 2000 US presidential election was one of the closest in history. The race was between the Republican nominee George W. Bush and Al Gore, the incumbent Democratic vice president. Florida was the tie-breaker state. Television networks’ predictions oscillated between both candidates as victors as votes were counted. At the end of counting, Bush was leading by only 1,738 votes. The narrow margin called for an immediate recount. When votes were recounted, it was revealed that Bush had actually led by less than 400 votes. This caused Democratic voters in Palm Beach County to complain about the design of the ballot as it had a “butterfly” layout, and that they had accidentally voted for the wrong candidate, Pat Buchanan. Using statistical analysis and linear regression modelling, our case study seeks to suggest answers to the number of predicted votes for Buchanan in Palm Beach County assuming that the relationship between Bush votes and Buchanan votes was the same in Palm Beach as it was in the other Florida counties and how many mis-cast votes there were since some voters erroneously voted Buchanan instead of Gore.
+The 2000 US presidential election was one of the closest in history. The race was between the Republican nominee George W. Bush and Al Gore, the incumbent Democratic vice president. Florida was the tie-breaker state. Television networks’ predictions oscillated between both candidates as victors as votes were counted. At the end of counting, Bush was leading by only 1,738 votes. The narrow margin called for an immediate recount. When votes were recounted, it was revealed that Bush had actually led by less than 400 votes. This caused Democratic voters in Palm Beach County to complain about the design of the ballot as it had a “butterfly” layout, and that they had accidentally voted for the wrong candidate, Pat Buchanan.
 
-**Description of Data**
+Using statistical analysis, this case study seeks to suggest answers to the number of votes Buchanan could have reasonably expected to receive given a more user-friendly ballot. Using a linear regression model, with Buchanan votes as a function of Bush votes, this case study seeks to determine the predicted number of votes for Buchanan in Palm Beach County, assuming that the relationship between Bush votes and Buchanan votes was the same in Palm Beach as in the other Florida counties. This case study also aims to determine how many mis-cast votes there were since some voters erroneously voted Buchanan instead of Gore.
 
-Our original data set we were given consisted of all total votes for Bush and Bucanan in the 2000 presidential election for each county in Florida which is 67 total counties. Our unit of observation was a vote casted in the United States 2000 presidential election. As Palm Beach county was a major outlier, we removed it from our data so that we could have more accurate results. The minimum number of votes casted for Bush in any county was 1316 while the maximum number of votes casted for Bush in any county was 289,456. Buchanan had a minimum of 9 votes casted for him while the maximum number of votes casted for him in any county was 3407. Bush’s median number of votes was 20,196 while Buchanan had a median of 114, and Bush had a mean of 43,356 votes and Buchanan had a mean of 258.5 votes. As we can see from the summary statistics, Bush had consistently more votes than Buchanan in the 2000 Presidential election. 
+## Description of Data and Exploratory Data Analysis
 
-**Description of the Modelling Process**
-
-# R Appendix
-
-*Copy and paste all code that you used for your case study into one chunk at the end of your written report. Before submitting your case study, take one final look at the R Appendix and make sure that all code is clearly visible. If you see a line running off the side of the PDF, please split the code over multiple lines using a linebreak. The header at the top of this template should ensure that lines of code are automatically wrapped in your final document.*
+The dataset originates from the Statistical Sleuth data library. It consists of all total votes for Bush and Buchanan in the US 2000 presidential election for each county in Florida, which is 67 in total. The unit of observation is a vote cast in the United States 2000 presidential election. As Palm Beach County was a major outlier, it was removed from the data set to improve model accuracy. This brought the total observations to 66.
 
 ```{r}
 #| message: FALSE
 #| warning: FALSE
+#| echo: FALSE
+#| label: election-summary-statistics
+#| tbl-cap: "United States 2000 Presidential Election Florida County Votes Summary Statistics "
 
-# Loading necessary packages
 library(tidyverse)
 library(Sleuth2)
 library(broom)        
 library(kableExtra)   
+library(ggplot2)
+library(knitr)
 
 # Loading the data for case study one
 election <- Sleuth2::ex0825
 
 # Creating a second dataset with Palm Beach County excluded
 election_wo_pb <- election |> filter(County != "Palm Beach")
+election_wo_pb_summary_df <- election_wo_pb |>
+  select(Bush2000, Buchanan2000) 
 
-#creating a scatterplot to visualize the relationship between Bush and Buchanan Votes
-election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) + geom_point() + ggtitle("Association between votes for Bush and votes for Buchanan.")
+sapply(election_wo_pb_summary_df, summary, digits=5) |>
+  kable()
+```
 
-#Fit a linear regression model to predict Buchanan2000 votes based on Bush2000 votes
-election_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+Based on Table 1, the minimum number of votes cast for Bush in any county was 1316, and the maximum was 289,456. Buchanan had a minimum of 9 votes cast in his favor in any county during the election and 3407. Bush’s median number of votes was significantly higher than Buchanan's at 20,196, while Buchanan had a median of 114. Bush had a mean of 43,356 votes, and Buchanan had a mean of 258.5 votes, indicating the typical total votes for a county. As we can see from the summary statistics, Bush consistently had more votes than Buchanan in the 2000 Presidential election.
+
+The mean number of votes for both candidates is larger than the median number of votes, indicating an inflation of the mean by outlier total county votes. There are fewer outliers affecting the mean of Buchanan votes than that of Bush votes.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| label: eda-histogram
+#| fig-cap: "Histogram Showing Distribution of Bush and Buchanan Votes"
+
+tidy_election_wo_pb <- election_wo_pb |>
+  select(Buchanan2000, Bush2000)|>
+  stack()
+
+ggplot(tidy_election_wo_pb, aes(x=values, fill = ind)) +
+  geom_histogram(bins = 20)+
+  theme(legend.position="top")+
+  labs(x = "Votes", y= "Count", fill = "Candidates")+
+  scale_fill_manual(values=c("#A020F0", "#FF0000")) + 
+  facet_wrap(~ind)
+```
+
+Figure 1 shows a considerable difference in the distribution of Buchanan votes compared to Bush votes. While both are right-skewed, the degree of skew on the plot of Buchanan votes is noticeably larger. Each county's total votes for Buchanan is less than 100,000. Total county votes for Bush ranged between the low hundred thousands and 200,000. The distribution indicates outlier total votes of around 300,000. The variation in the number of Bush votes across the counties of Florida is greater than that across Buchanan votes. To improve the skew of the distribution, a natural logarithmic transformation can be applied to both variables.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| label: eda-histogram-log
+#| fig-cap: "Histogram Showing Distribution of Bush and Buchanan Votes Under a Natural Logarithmic Transformation"
+ggplot(tidy_election_wo_pb, aes(x=log(values), fill = ind)) +
+  geom_histogram(bins = 20)+
+  theme(legend.position="top")+
+  labs(x = "log(Votes)", y= "Count", fill = "Candidates")+
+  scale_fill_manual(values=c("#A020F0", "#FF0000")) + 
+  facet_wrap(~ind)
+```
+
+Figure 2 shows a clearer image of the distribution of Buchanan's votes by reducing the skew. The histogram of Buchanan's votes shows a unimodal distribution, indicating a singular most frequent number of votes. The distribution of Bush votes shows a bimodal distribution, indicating two groups of votes with the highest frequency.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| label: eda-scatterplot
+#| fig-cap: "Scatterplot Showing Buchanan Votes against Bush Votes"
+election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) + 
+  geom_point() + 
+  labs(title ="Association Between Votes for Bush and Votes for Buchanan.", x = "Bush Votes", y = "Buchanan Votes")
+```
+
+We observe from Figure 3 that most of the Buchanan total county votes lie between 0 and 500, while most of the total county votes for Bush lie between 0 and 100,000.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| label: eda-scatterplot-log
+#| fig-cap: "Scatterplot Showing Buchanan Votes against Bush Votes Under a Natural Logarithmic Transformation"
+ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) + 
+  geom_point() + 
+  labs(title ="Association Between Natural Logarithmic Transformation Votes for Bush and Votes for Buchanan.", x = "log(Bush Votes)", y = "log(Buchanan Votes)")+
+  scale_x_continuous(trans = "log") + 
+  scale_y_continuous(trans = "log")
+```
+
+We observe from Figure 4 a similar distribution of Buchanan and Bush Votes on a natural logarithmic scale.
+
+## Statistical Methods and Results
+
+To estimate the relationship between the quantitative outcome variable, number of Buchanan votes and the quantitative explanatory variable, the number of Bush votes in the 2000 election, a simple linear regression model was employed. Using a linear regression model, we can also predict a more reasonable point estimate for Buchanan votes based on this relationship. Through intervals around the model's predicated point estimate, we can also determine a plausible number of votes that should have been in Gore. The model expresses Buchanan votes as a function of Bush votes. To ensure the model is as appropriate for the data as the plot in Figure 3 shows a violation of the equal variance condition for simple linear regression, transformations are applied to both the explanatory and response variables.
+
+###### Population Model for the Mean Buchanan Votes as a Function of Bush Votes
+
+$$ E[log(Buchanan2000)|log(Bush2000)] = \beta_0 + \beta_1(log(Bush2000)), $$
+
+where *log(Buchanan2000)* is the natural logarithm of the number of votes Pat Buchanan received in the 2000 United States presidential election and *log(Bush2000)* is the natural logarithm of the number of votes George W. Bush received in the 2000 United States presidential election.
+
+###### The Fitted Model for the Mean
+
+$$ \widehat{log({y_i})} = \widehat\beta_0 + \widehat\beta_1log(x_i) $$
+
+Estimates for the intercept coefficient, $\widehat\beta_0$ and slope, $\widehat\beta_1$ , were determined by fitting the model to the data.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+#| label: estimate-tbl
+#| tbl-cap: "Table showing estimates of the model Parameters and their accompanying standard errors"
+# Fit a linear regression model to predict Buchanan2000 votes based on Bush2000 votes
+election_wo_pb_lm <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
 
 # Representing the regression table as a dataframe (i.e., tidying the summary() output)
-election_lm_table <- summary(election_lm)$coefficients
+election_wo_pb_lm_table <- summary(election_wo_pb_lm)$coefficients
 
 # Creating a nicely formatted table from the dataframe using the kable package
 #   You can find more information about this package here: https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf
-election_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
+election_wo_pb_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
+```
 
-#Use the fitted regression model to predict Buchanan2000 votes for Palm Beach County
-palm_beach_predictions <- predict(model, newdata = election |> filter(County == "Palm Beach"), 
-                       interval = "prediction", level = 0.95)
+Based on the model estimates summary table, $\widehat\beta_0$ is -2.34, and $\widehat\beta_1$ is 0.73. The slope indicates that there is a positive relationship between the number of total county votes Bush received and the number of total county votes Buchanan received.
 
-# Viewing the prediction interval
-palm_beach_predictions  
+###### The Fitted Model for the Mean Buchanan Votes as a Function of Bush Votes
 
-#Fit a linear regression model using a double log transformation
-model_double_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
-#View the summary of the model to see the regression results
-summary(model_double_log)
+$$ \widehat{log({y_i})} = -2.34 + 0.73(log(x_i)) $$
 
-# Create a scatter plot of the log-transformed votes for Bush and Buchanan
-plot(log(election_wo_pb$Bush), log(election_wo_pb$Buchanan), 
-     xlab = "Log(Bush Votes)", ylab = "Log(Buchanan Votes)", 
-     main = "Double Log-Transformed Regression: Log(Bush Votes) vs Log(Buchanan Votes)",
-     pch = 19, col = "blue")
-# Add the regression line from the double-log model to the plot
-abline(model_double_log, col = "red", lwd = 2) 
+A doubling of the number of total votes Bush receives in a county is associated with a multiplicative change of $2^{0.73}$ in the median of total Buchanan votes in a county.
+
+To predict a value for the number of total county votes Buchanan could have reasonably expected to receive in Palm Beach County given a more user-friendly ballot, we used the fitted regression line and the number of votes Bush received in that county to calculate it. We also obtained a reasonable range for this value by using a 95% prediction interval.
+
+Based on our fitted regression line, Buchanan's total number of votes in Palm County is more reasonably expected to be 592 based on the number of votes Bush received in the same county: 152,846 votes.
+
+We are 95% confident that the number of votes for Buchanan for Palm County total votes with Bush total county votes at 152,846 is between 251 and 1399.
+
+## Discussion
+Since we removed Palm Beach, our analysis is based on the typical voting patterns in the other counties. This means that our model is more generalized to counties with more standard ballot designs and voting conditions. While Palm Beach's issues were likely the most extreme, other counties might have had smaller, unquantified ballot design flaws, voter confusion, or other irregularities that could still influence voting behavior. Our model does not capture any similar but less obvious problems in other counties. 
+## R Appendix
+
+**Assessing the Linear Regression Model**
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+election_wo_pb_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+plot(election_wo_pb_lm)
+```
+
+From the plots, the model violates the linearity and equal variance conditions. It also violates the normality condition as the Q-Q plot shows many extreme residuals.
+
+**Assessing the Linear Regression Model Under Natural Logarithmic Transformation of Response and Explanatory Variables**
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| echo: FALSE
+election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+plot(election_wo_pb_lm_log)
+```
+
+From the plots, from the residuals vs fitted plot, we can observe that the natural logarithmic transformation improved the model, and it now meets the linearity and homoscedasticity conditions. While the Q-Q Residuals plot did increase the normality, there are still many extreme residuals to the left of the plot.
+
+```{r}
+#| message: FALSE
+#| warning: FALSE
+#| output: FALSE
+
+library(tidyverse)
+library(Sleuth2)
+library(broom)        
+library(kableExtra)   
+library(ggplot2)
+library(knitr)
+library(dplyr)
+
+# Loading the data for case study one
+election <- Sleuth2::ex0825
+
+# Creating a second dataset with Palm Beach County excluded
+election_wo_pb <- election |> filter(County != "Palm Beach")
+election_wo_pb_summary_df <- election_wo_pb |>
+  select(Bush2000, Buchanan2000) 
+
+# Creating and formatting a table of summary statistics
+sapply(election_wo_pb_summary_df, summary, digits=5) |>
+  kable()
+
+# Data wrangling the election dataset to create histograms
+tidy_election_wo_pb <- election_wo_pb |>
+  select(Buchanan2000, Bush2000)|>
+  stack()
+
+# EDA histogram of distribution of Buchanan Votes and Bush Votes
+ggplot(tidy_election_wo_pb, aes(x=values, fill = ind)) +
+  geom_histogram(bins = 20)+
+  theme(legend.position="top")+
+  labs(x = "Votes", y= "Count", fill = "Candidates")+
+  scale_fill_manual(values=c("#A020F0", "#FF0000")) + 
+  facet_wrap(~ind)
+
+# EDA histogram of distribution of Buchanan Votes and Bush Votes under a natural logarithmic transformation
+ggplot(tidy_election_wo_pb, aes(x=log(values), fill = ind)) +
+  geom_histogram(bins = 20)+
+  theme(legend.position="top")+
+  labs(x = "log(Votes)", y= "Count", fill = "Candidates")+
+  scale_fill_manual(values=c("#A020F0", "#FF0000")) + 
+  facet_wrap(~ind)
+
+# EDA scatterplot of Buchanan Votes against Bush Votes
+election_wo_pb |> ggplot(aes(x = Bush2000, y = Buchanan2000)) + 
+  geom_point() + 
+  labs(title ="Association Between Votes for Bush and Votes for Buchanan.", x = "Bush Votes", y = "Buchanan Votes")
+
+# EDA scatterplot of Buchanan Votes against Bush Votes under a natural logarithmic transformation
+ggplot(election_wo_pb, aes(y = Buchanan2000, x = Bush2000)) + 
+  geom_point() + 
+  labs(title ="Association Between Natural Logarithmic Transformation Votes for Bush and Votes for Buchanan.", 
+       x = "log(Bush Votes)", 
+       y = "log(Buchanan Votes)")+
+  scale_x_continuous(trans = "log") + 
+  scale_y_continuous(trans = "log")
+
+# Fit a linear regression model to predict Buchanan2000 votes based on Bush2000 votes
+election_wo_pb_lm <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+
+# Representing the regression table as a dataframe (i.e., tidying the summary() output)
+election_wo_pb_lm_table <- summary(election_wo_pb_lm)$coefficients
+
+# Creating a nicely formatted table from the dataframe using the kable package
+#   You can find more information about this package here: https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf
+election_wo_pb_lm_table |> kbl(col.names = c("Estimate", "Standard Error", "t value", "Pr(>|t|)"), align = "c", booktabs = T, linesep="", digits = c(2, 2, 2, 4)) |> kable_classic(full_width = F, latex_options = c("HOLD_position"))
+
+# Extracting Bush total county votes in Palm Beach
+election_pb_bush <- election |> 
+              filter(County == "Palm Beach")|>
+              pull(Bush2000)
+election_pb_bush
 
 # Generate predictions using the double-log regression model for new data (palm_beach_data),
-# providing both the predicted values and a 95% prediction interval.
-pred_double_log <- predict(model_double_log, newdata = palm_beach_data, 
-                           interval = "prediction", level = 0.95)
-# Exponentiate the predictions (since we applied log transformation during modeling),
-# to return the predicted Buchanan votes in the original scale (non-log scale).
-pred_buchanan_double_log <- exp(pred_double_log)
+new_election <- data.frame(Bush2000 = election_pb_bush)
+palm_beach_predictions <- election_wo_pb_lm |> augment(newdata = new_election, 
+                          interval = "prediction", 
+                          conf.level = 0.95)
+palm_beach_predictions
+# Providing both the predicted values and a 95% prediction interval
+
+# Exponentiate the predictions (since we applied log transformation during modeling) to return the predicted Buchanan votes in the original scale (non-log scale).
+pred_buchanan_double_log <- palm_beach_predictions |>
+                           select(.fitted, .lower, .upper) |>
+                            exp()
+
 # Display the transformed predictions (original scale of Buchanan votes)
 pred_buchanan_double_log 
 
-# Basic summary statistics for Bush and Buchanan votes
-summary(election$Bush)
-summary(election$Buchanan)
+# Regression Conditions Analysis on Model
+election_wo_pb_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
+plot(election_wo_pb_lm)
 
+# Regression Conditions Analysis on Model under natural logarithmic transformation
+election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
+plot(election_wo_pb_lm_log)
 ```
