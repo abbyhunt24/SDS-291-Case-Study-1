@@ -175,7 +175,7 @@ We are 95% confident that the number of votes for Buchanan for Palm County total
 
 ## R Appendix
 
-Assessing the Linear Regression Model
+**Assessing the Linear Regression Model**
 
 ```{r}
 #| message: FALSE
@@ -187,7 +187,7 @@ plot(election_wo_pb_lm)
 
 From the plots, the model violates the linearity and equal variance conditions. It also violates the normality condition as the Q-Q plot shows many extreme residuals.
 
-Assessing the Linear Regression Model Under Natural Logarithmic Transformation of Response and Explanatory Variables
+**Assessing the Linear Regression Model Under Natural Logarithmic Transformation of Response and Explanatory Variables**
 
 ```{r}
 #| message: FALSE
@@ -197,7 +197,7 @@ election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_w
 plot(election_wo_pb_lm_log)
 ```
 
-From the plots, from the residuals vs fitted plot, we can observe that the natural logarithmic transformation improved the model, and it now meets the linearity and homoscedasticity conditions. While the Q-Q Residuals plot did increase the normality there are still many extreme residuals to the left of the plot.
+From the plots, from the residuals vs fitted plot, we can observe that the natural logarithmic transformation improved the model, and it now meets the linearity and homoscedasticity conditions. While the Q-Q Residuals plot did increase the normality, there are still many extreme residuals to the left of the plot.
 
 ```{r}
 #| message: FALSE
