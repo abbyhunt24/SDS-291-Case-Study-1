@@ -27,7 +27,7 @@ Using statistical analysis, this case study seeks to suggest answers to the numb
 
 ## Description of Data and Exploratory Data Analysis
 
-The dataset originates from the Statistical Sleuth data library. It consists of all total votes for Bush and Buchanan in the US 2000 presidential election for each county in Florida, which is 67 in total. The unit of observation is a vote cast in the United States 2000 presidential election. As Palm Beach County was a major outlier, it was removed from the data set to improve model accuracy. This brought the total observations to 66.
+The dataset originates from the Statistical Sleuth data library. It consists of all total votes for Bush and Buchanan in the US 2000 presidential election for each county in Florida, which is 67 in total. The unit of observation is the total number of votes for a county in Florida in the United States 2000 presidential election. As Palm Beach County was a major outlier, it was removed from the data set to improve model accuracy. This brought the total observations to 66.
 
 ```{r}
 #| message: FALSE
@@ -42,6 +42,7 @@ library(broom)
 library(kableExtra)   
 library(ggplot2)
 library(knitr)
+libary(dplyr)
 
 # Loading the data for case study one
 election <- Sleuth2::ex0825
@@ -58,7 +59,6 @@ sapply(election_wo_pb_summary_df, summary, digits=5) |>
 Based on Table 1, the minimum number of votes cast for Bush in any county was 1316, and the maximum was 289,456. Buchanan had a minimum of 9 votes cast in his favor in any county during the election and 3407. Bush’s median number of votes was significantly higher than Buchanan's at 20,196, while Buchanan had a median of 114. Bush had a mean of 43,356 votes, and Buchanan had a mean of 258.5 votes, indicating the typical total votes for a county. As we can see from the summary statistics, Bush consistently had more votes than Buchanan in the 2000 Presidential election.
 
 Based on Table 1, the minimum number of votes cast for Bush in any county was 1316, and the maximum was 289,456. Buchanan had a minimum of 9 votes cast in his favour in any county during the election and 3407. Bush’s median number of votes was significantly higher than Buchanan's at 20,196, while Buchanan had a median of 114. Bush had a mean of 43,356 votes, and Buchanan had a mean of 258.5 votes, indicating the typical total votes for a county. As we can see from the summary statistics, Bush consistently had more votes than Buchanan in the 2000 Presidential election.
-
 
 The mean number of votes for both candidates is larger than the median number of votes, indicating an inflation of the mean by outlier total county votes. There are fewer outliers affecting the mean of Buchanan votes than that of Bush votes.
 
@@ -174,8 +174,23 @@ Based on our fitted regression line, Buchanan's total number of votes in Palm Co
 
 We are 95% confident that the number of votes for Buchanan for Palm County total votes with Bush total county votes at 152,846 is between 251 and 1399.
 
+Given that the number of votes Buchanan received in Palm Beach County was 3407, we can conclude that there were between 3156 and 2008 mis-cast votes that should have gone to Gore.
+
 ## Discussion
-Since we removed Palm Beach, our analysis is based on the typical voting patterns in the other counties. This means that our model is more generalized to counties with more standard ballot designs and voting conditions. While Palm Beach's issues were likely the most extreme, other counties might have had smaller, unquantified ballot design flaws, voter confusion, or other irregularities that could still influence voting behavior. Our model does not capture any similar but less obvious problems in other counties. 
+
+Democracy is the foundation of the United States. Every four years, voters come out to exercise their constitutional right to determine the head of the government that represents them. The importance of the presidential election must be underscored.
+
+In the first presedential election of the new millennium, a new ballot in Florida and close election shook this foundation. This case study sought to answer questions about an alternate voting outcome provided that the problems that arose did not exist.
+
+This case study sought to suggest answers to the number of votes Buchanan could have reasonably expected to receive given a more user-friendly ballot. It sought to determine the predicted number of votes for Buchanan in Palm Beach County, assuming that the relationship between Bush votes and Buchanan votes was the same in Palm Beach as in the other Florida counties. This case study also sought to determine how many mis-cast votes there were since some voters erroneously voted Buchanan instead of Gore.
+
+Through our statistical analysis using a simple linear regression model fit to the data, we determined that given that the ballot that was used in all other Florida counties was used in Palm Beach, Buchanan could have expected to receive 592 votes instead of the 3407 he received. After constructing a prediction interval for these values, his predicted total for Palm Beach County fell between 251 and 1399. Taking this prediction range as a reasonable prediction, there may have been between 3156 and 2008 mis-cast votes that should have gone to Gore.
+
+While Bush would have still won this county in terms of total votes, it is important to identify flawed counts in important elections that have the power to affect people's lived experiences and the reasons for them to put in place preventative measures.
+
+Since we removed Palm Beach, our analysis is based on the typical voting patterns in the other counties. This means that our model is more generalized to counties with more standard ballot designs and voting conditions. While Palm Beach's issues were likely the most extreme, other counties might have had smaller, unquantified ballot design flaws, voter confusion, or other irregularities that could still influence voting behavior. Our model does not capture any similar but less obvious problems in other counties.
+
+## R Appendix
 
 **Assessing the Linear Regression Model**
 
@@ -187,7 +202,7 @@ election_wo_pb_lm <- lm(Buchanan2000 ~ Bush2000, data = election_wo_pb)
 plot(election_wo_pb_lm)
 ```
 
-From the plots, the model violates the linearity and equal variance conditions. It also violates the normality condition as the Q-Q plot shows many extreme residuals.
+From the plots, the model violates the linearity and equal variance conditions. It also violates the normality condition, as the Q-Q plot shows many extreme residuals. Since the data is clustered by geography (county in Florida), the model violates the independence condition.
 
 **Assessing the Linear Regression Model Under Natural Logarithmic Transformation of Response and Explanatory Variables**
 
@@ -199,7 +214,7 @@ election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_w
 plot(election_wo_pb_lm_log)
 ```
 
-From the plots, from the residuals vs fitted plot, we can observe that the natural logarithmic transformation improved the model, and it now meets the linearity and homoscedasticity conditions. While the Q-Q Residuals plot did increase the normality, there are still many extreme residuals to the left of the plot.
+From the plots, from the residuals vs fitted plot, we can observe that the natural logarithmic transformation improved the model, and it now meets the linearity and homoscedasticity conditions. While the Q-Q Residuals plot did increase the normality, there are still many extreme residuals to the left of the plot. This model also does not meet the independence condition.
 
 ```{r}
 #| message: FALSE
@@ -301,4 +316,3 @@ plot(election_wo_pb_lm)
 election_wo_pb_lm_log <- lm(log(Buchanan2000) ~ log(Bush2000), data = election_wo_pb)
 plot(election_wo_pb_lm_log)
 ```
-
